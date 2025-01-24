@@ -114,3 +114,4 @@ void loop() {
     // Esperar un corto período antes de la siguiente lectura
     delay(2000); // El sensor DHT22 necesita un mínimo de 2 segundos entre lecturas
 }
+

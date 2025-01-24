@@ -1,0 +1,103 @@
+// C++ code
+#include <Servo.h>
+
+// Pines
+const int ledPin = 2;
+const int lightSensorPin = A0;
+const int trigPin = 9;
+const int echoPin = 10;
+const int yl100Pin = A1;
+const int tempSensorPin = A2; // Pin del sensor TMP36
+const int motorPin = 7; // Pin del motor DC
+
+// Umbrales
+const int lightThreshold = 500;
+const int distanceThreshold = 30;
+const int yl100Threshold = 300;
+const float tempThreshold = 23.0; // Umbral de temperatura en grados Celsius
+
+// Servomotores
+Servo servoUltrasonic;
+Servo servoYL100;
+
+// Función de lectura del sensor de distancia
+long readUltrasonicDistance() {
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+    long duration = pulseIn(echoPin, HIGH);
+    long distance = duration * 0.034 / 2; // Convertir a cm
+    return distance;
+}
+
+// Función de lectura del sensor de temperatura TMP36
+float readTemperature() {
+    int sensorValue = analogRead(tempSensorPin);
+    float voltage = sensorValue * (5.0 / 1023.0);
+    float temperature = (voltage - 0.5) * 100; // Convertir a grados Celsius
+    return temperature;
+}
+
+void setup() {
+    // Configuración de pines
+    pinMode(ledPin, OUTPUT);
+    pinMode(lightSensorPin, INPUT);
+    pinMode(trigPin, OUTPUT);
+    pinMode(echoPin, INPUT);
+    pinMode(yl100Pin, INPUT);
+    pinMode(motorPin, OUTPUT); // Configurar el pin del motor como salida
+
+    // Inicialización de servos
+    servoUltrasonic.attach(3); // Conectar servomotor al pin 3
+    servoYL100.attach(4);      // Conectar servomotor al pin 4
+
+    // Inicialización del Serial Monitor para depuración
+    Serial.begin(9600);
+}
+
+void loop() {
+    // Leer sensor de luz
+    int lightLevel = analogRead(lightSensorPin);
+    // Si no hay luz, encender LED
+    if (lightLevel < lightThreshold) {
+        digitalWrite(ledPin, HIGH);
+    } else {
+        digitalWrite(ledPin, LOW);
+    }
+
+    // Leer sensor ultrasónico
+    long distance = readUltrasonicDistance();
+    // Si la distancia es mayor a 30 cm, mover servomotor
+    if (distance > distanceThreshold) {
+        servoUltrasonic.write(90); // Ajusta el ángulo según sea necesario
+    } else {
+        servoUltrasonic.write(0);  // Ajusta el ángulo según sea necesario
+    }
+
+    // Leer sensor YL-100
+    int yl100Value = analogRead(yl100Pin);
+    // Si el sensor YL-100 está seco, mover servomotor
+    if (yl100Value > yl100Threshold) {
+        servoYL100.write(90); // Ajusta el ángulo según sea necesario
+    } else {
+        servoYL100.write(0);  // Ajusta el ángulo según sea necesario
+    }
+
+    // Leer sensor de temperatura
+    float temperature = readTemperature();
+    Serial.print("Temperatura: ");
+    Serial.print(temperature);
+    Serial.println(" °C");
+
+    // Si la temperatura es superior a 23 grados, activar motor DC
+    if (temperature > tempThreshold) {
+        digitalWrite(motorPin, HIGH); // Activar motor
+    } else {
+        digitalWrite(motorPin, LOW); // Desactivar motor
+    }
+
+    // Esperar un corto período antes de la siguiente lectura
+    delay(500);
+}
